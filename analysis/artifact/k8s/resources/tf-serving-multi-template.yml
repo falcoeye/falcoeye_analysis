@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $appname
+spec:
+  selector:
+    matchLabels:
+      app: $appname
+  replicas: $replicas
+  template:
+    metadata:
+      labels:
+        app: $appname
+    spec:
+      containers:
+        - env:
+          name: $appname
+          image: tf-models
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: $port
+          args:
+            - "--model_config_file=/models/models.config"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: $appname
+  name: $appname
+spec:
+  ports:
+  - port: $port
+    targetPort: $port
+  selector:
+    app: $appname
+  type: LoadBalancer

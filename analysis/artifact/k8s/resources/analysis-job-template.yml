@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+   name: $jobname
+spec:
+   completions: 1
+   backoffLimit: 0
+   template:
+      spec:
+         containers:
+            - name: $jobname
+              image: falcoeye-analysis:latest
+              imagePullPolicy: IfNotPresent
+              command: ["python3.8", "main.py"]   
+              env:
+                  - name: ANALYSIS_PATH
+                    value: $analysis_path
+                  - name: WORKFLOW_USER
+                    valueFrom:
+                     secretKeyRef:
+                        key: user
+                        name: workflow-credentials
+                  - name: WORKFLOW_PASSWORD
+                    valueFrom:
+                     secretKeyRef:
+                        key: password
+                        name: workflow-credentials
+                  - name: DEPLOYMENT
+                    value: google
+                  - name: CHANNEL
+                    value: insecure
+              volumeMounts:
+                  - mountPath: /user-assets/
+                    name: user-assets-volume-mount
+         restartPolicy: Never
+         volumes:
+            - name: user-assets-volume-mount
+              persistentVolumeClaim:
+                  claimName: user-assets-pvc

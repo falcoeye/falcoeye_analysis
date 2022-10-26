@@ -1,0 +1,323 @@
+{
+    "analysis": {
+        "id": "bdcf7f74-5c3f-4898-891f-c8de10b3ecf1",
+        "args": {
+            "max_cars": 100,
+            "sample_every": 300,
+            "min_score_thresh": 0.1,
+            "max_boxes": 100,
+            "width_threshold": 0.1,
+            "height_threshold": 0.1,
+            "length": -1,
+            "frequency": 3,
+            "ntasks": 4,
+            "resolution": "best",
+            "prefix": "/Users/jalalirs/Documents/code/falcoeye/falcoeye_analysis/analysis/artifact/k8s/resources/test/",
+            "filename": "/Users/jalalirs/Documents/code/falcoeye/media/parking_lot.mp4"
+        }
+    },
+    "workflow": {
+        "feeds": {
+            "sources": [
+                "video",
+                "streaming_source"
+            ],
+            "params": [
+                {
+                    "name": "filename",
+                    "type": "string",
+                    "disc": "filepath for video in case of streaming from video file",
+                    "source": "infered",
+                    "default": null
+                },
+                {
+                    "name": "url",
+                    "type": "string",
+                    "disc": "url for camera in case of streaming server",
+                    "source": "infered",
+                    "default": null
+                },
+                {
+                    "name": "host",
+                    "type": "string",
+                    "disc": "host for camera in case of rtsp camera",
+                    "source": "infered",
+                    "default": null
+                },
+                {
+                    "name": "port",
+                    "type": "string",
+                    "disc": "port for camera in case of rtsp camera",
+                    "source": "infered",
+                    "default": null
+                },
+                {
+                    "name": "username",
+                    "type": "string",
+                    "disc": "username for camera in case of rtsp camera",
+                    "source": "infered",
+                    "default": null
+                },
+                {
+                    "name": "password",
+                    "type": "string",
+                    "disc": "password for camera in case of rtsp camera",
+                    "source": "infered",
+                    "default": null
+                },
+                {
+                    "name": "max_cars",
+                    "type": "int",
+                    "disc": "Maximum number of parking lots",
+                    "source": "user",
+                    "default": 100
+                },
+                {
+                    "name": "sample_every",
+                    "type": "int",
+                    "disc": "Sample every (seconds for stream and frame for video)",
+                    "source": "user",
+                    "default": 30
+                },
+                {
+                    "name": "min_score_thresh",
+                    "type": "float",
+                    "disc": "Minimum detection confidance ([0-1])",
+                    "source": "user",
+                    "default": 0.1
+                },
+                {
+                    "name": "max_boxes",
+                    "type": "int",
+                    "disc": "Maximum number of detections ([0-100])",
+                    "source": "user",
+                    "default": 100
+                },
+                {
+                    "name": "width_threshold",
+                    "type": "float",
+                    "disc": "Detection large width suppressor ([0-1])",
+                    "source": "user",
+                    "default": 0.1
+                },
+                {
+                    "name": "height_threshold",
+                    "type": "float",
+                    "disc": "Detection large height suppressor ([0-1])",
+                    "source": "user",
+                    "default": 0.1
+                },
+                {
+                    "name": "length",
+                    "type": "float",
+                    "disc": "Length of streaming (seconds, -1 for entire video)",
+                    "source": "user",
+                    "default": -1
+                },
+                {
+                    "name": "frequency",
+                    "type": "int",
+                    "disc": "Output frequency (every n frame)",
+                    "source": "user",
+                    "default": 3
+                },
+                {
+                    "name": "ntasks",
+                    "type": "int",
+                    "disc": "Number of tcp process at a time",
+                    "source": "user",
+                    "default": 4
+                },
+                {
+                    "name": "resolution",
+                    "type": "string",
+                    "disc": "Stream resolution",
+                    "source": "user",
+                    "default": "best"
+                }
+            ]
+        },
+        "nodes": [
+            {
+                "name": "stream_source",
+                "type": "DynamicSource",
+                "filename": "$filename",
+                "url": "$url",
+                "host": "$host",
+                "port": "$port",
+                "username": "$username",
+                "password": "$password",
+                "length": "$length",
+                "sample_every": "$sample_every",
+                "resolution": "$resolution"
+            },
+            {
+                "name": "cocoobjects_model",
+                "type": "TFModel",
+                "model_name": "cocoobjects",
+                "version": 1,
+                "protocol": "gRPC"
+            },
+            {
+                "name": "cocoobjects_model_thread",
+                "type": "ConcurrentTFgRPCTasksThreadWrapper",
+                "node": "cocoobjects_model",
+                "ntasks": "$ntasks",
+                "max_send_message_length": 6866000
+            },
+            {
+                "name": "falcoeye_detection",
+                "type": "FalcoeyeTFDetectionNode",
+                "labelmap": {
+                    "1": "person",
+                    "2": "bicycle",
+                    "3": "car",
+                    "4": "motorcycle",
+                    "5": "airplane",
+                    "6": "bus",
+                    "7": "train",
+                    "8": "truck",
+                    "9": "boat",
+                    "10": "traffic light",
+                    "11": "fire hydrant",
+                    "13": "stop sign",
+                    "14": "parking meter",
+                    "15": "bench",
+                    "16": "bird",
+                    "17": "cat",
+                    "18": "dog",
+                    "19": "horse",
+                    "20": "sheep",
+                    "21": "cow",
+                    "22": "elephant",
+                    "23": "bear",
+                    "24": "zebra",
+                    "25": "giraffe",
+                    "27": "backpack",
+                    "28": "umbrella",
+                    "31": "handbag",
+                    "32": "tie",
+                    "33": "suitcase",
+                    "34": "frisbee",
+                    "35": "skis",
+                    "36": "snowboard",
+                    "37": "sports ball",
+                    "38": "kite",
+                    "39": "baseball bat",
+                    "40": "baseball glove",
+                    "41": "skateboard",
+                    "42": "surfboard",
+                    "43": "tennis racket",
+                    "44": "bottle",
+                    "46": "wine glass",
+                    "47": "cup",
+                    "48": "fork",
+                    "49": "knife",
+                    "50": "spoon",
+                    "51": "bowl",
+                    "52": "banana",
+                    "53": "apple",
+                    "54": "sandwich",
+                    "55": "orange",
+                    "56": "broccoli",
+                    "57": "carrot",
+                    "58": "hot dog",
+                    "59": "pizza",
+                    "60": "donut",
+                    "61": "cake",
+                    "62": "chair",
+                    "63": "couch",
+                    "64": "potted plant",
+                    "65": "bed",
+                    "67": "dining table",
+                    "70": "toilet",
+                    "72": "tv",
+                    "73": "laptop",
+                    "74": "mouse",
+                    "75": "remote",
+                    "76": "keyboard",
+                    "77": "cell phone",
+                    "78": "microwave",
+                    "79": "oven",
+                    "80": "toaster",
+                    "81": "sink",
+                    "82": "refrigerator",
+                    "84": "book",
+                    "85": "clock",
+                    "86": "vase",
+                    "87": "scissors",
+                    "88": "teddy bear",
+                    "89": "hair drier",
+                    "90": "toothbrush"
+                },
+                "min_score_thresh": "$min_score_thresh",
+                "max_boxes": "$max_boxes",
+                "overlap_thresh": null
+            },
+            {
+                "name": "size_filter",
+                "type": "SizeFilter",
+                "width_threshold": "$width_threshold",
+                "height_threshold": "$height_threshold"
+            },
+            {
+                "name": "missing_cars",
+                "type": "MissingClassCounter",
+                "keys": [
+                    "car"
+                ],
+                "maxes": {
+                    "car": "$max_cars"
+                }
+            },
+            {
+                "name": "csv_outputter",
+                "type": "CSVWriter",
+                "xaxis": "Timestamp",
+                "yaxis": "car",
+                "prefix": "$prefix"
+            },
+            {
+                "name": "sequence_runner",
+                "type": "SequenceRunner",
+                "frequency": "$frequency",
+                "nodes": [
+                    "falcoeye_detection",
+                    "size_filter",
+                    "missing_cars",
+                    "csv_outputter"
+                ]
+            }
+        ],
+        "edges": [
+            [
+                "stream_source",
+                "cocoobjects_model_thread"
+            ],
+            [
+                "falcoeye_detection",
+                "size_filter"
+            ],
+            [
+                "size_filter",
+                "missing_cars"
+            ],
+            [
+                "missing_cars",
+                "csv_outputter"
+            ],
+            [
+                "cocoobjects_model_thread",
+                "sequence_runner"
+            ]
+        ],
+        "starters": [
+            "stream_source"
+        ],
+        "run_order": [
+            "sequence_runner",
+            "cocoobjects_model_thread",
+            "stream_source"
+        ]
+    }
+}
