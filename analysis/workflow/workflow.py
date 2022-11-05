@@ -62,7 +62,6 @@ class Workflow:
         self._busy = True
         self._tasks = {}
         for n in self._nodes_in_order:
-            print(n.name)
             # TODO: rename or do something, looks ugly
             self._tasks[n.name] = {"done":False,"noerror":True,"message": None}
             logging.info(f"Running {n._name}")   
@@ -81,10 +80,11 @@ class Workflow:
             
             if all([a["noerror"] for _,a in self._tasks.items()]):
                 post_new_status(aid,"Completed","workflow completed") 
+                logging.info("Done all peacefully! closing analysis")
             else:
                 message = "\n".join([a["message"] for _,a in self._tasks.items() if a["message"]])
                 post_new_status(aid,"Error",message) 
-            
+                logging.info("Done all with error! closing analysis")
             self._busy = False
     
     def error_task_callback(self,task,error):

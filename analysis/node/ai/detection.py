@@ -7,7 +7,6 @@ from .utils import get_color_from_number,non_max_suppression
 from PIL import Image
 
 
-
 class FalcoeyeDetection:
     def __init__(self,frame,detections, category_map):
         self._frame = frame
@@ -18,7 +17,7 @@ class FalcoeyeDetection:
 
     @property
     def size(self):
-        return self._frame.size
+        return self._frame.frame.shape
     
     @property
     def frame(self):
@@ -93,7 +92,6 @@ class FalcoeyeDetection:
             return self._frame == other
 
 class FalcoeyeDetectionNode(Node):
-    
     def __init__(self, name, 
     labelmap,
     min_score_thresh,

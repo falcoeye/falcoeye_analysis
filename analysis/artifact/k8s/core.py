@@ -225,6 +225,10 @@ class FalcoServingKube:
 
     @staticmethod
     def is_port_taken(port,namespace="default"):
+        try:
+            config.load_kube_config()
+        except:
+            config.load_incluster_config()
         v1 = client.CoreV1Api()
         resp = v1.list_namespaced_service(namespace=namespace)
         ports = list(set([i.spec.ports[0].port for i in resp.items]))

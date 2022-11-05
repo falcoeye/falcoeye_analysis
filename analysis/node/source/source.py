@@ -4,6 +4,7 @@ import logging
 import cv2
 import numpy as np
 import datetime
+from PIL import Image
 
 class Source(Node):
     def __init__(self,name,**kwargs):
@@ -51,6 +52,24 @@ class FalcoeyeFrame:
             return self._relative_time
         elif self._time_unit == "epoch":
            return datetime.datetime.fromtimestamp(self._relative_time)
+     
+    def set_frame(self,frame):
+        self._frame = frame
+        self._frame_bgr = cv2.cvtColor(self._frame, cv2.COLOR_RGB2BGR)
+
+    def blend(self,image,alpha=0.5,inplace=True):
+        if inplace:    
+            self.set_frame(np.asarray(
+                Image.blend(Image.fromarray(self._frame), 
+                Image.fromarray(image), 
+                alpha).convert("RGB")))
+            return self
+        else:
+            return np.asarray(
+                Image.blend(Image.fromarray(self._frame), 
+                Image.fromarray(image), 
+                alpha).convert("RGB"))
+
     
     def __lt__(self,other):
         return self._frame_number < other.framestamp

@@ -145,7 +145,7 @@ class LeakyClasstMonitor(ClasstMonitor):
             if hasattr(item,"boxes"):
                 self.process(item)
             elif self._status == 1:
-                # assuming frame not detection
+                # assuming frame not detection and object is in
                 self._current_sequence.append(item)
             elif self._status and self._triggeredOnce:
                 # assuming buffer

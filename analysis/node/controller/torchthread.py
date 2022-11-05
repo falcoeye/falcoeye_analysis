@@ -5,6 +5,7 @@ import grpc
 import logging
 import aiohttp
 from ...artifact.k8s.torch import InferenceAPIsServiceStub
+import os
 
 
 class ConcurrentTorchgRPCTasksThreadWrapper(ConcurrentRequestTaskThreadWrapper):

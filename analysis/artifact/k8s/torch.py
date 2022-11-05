@@ -10,6 +10,7 @@ import asyncio
 import aiohttp 
 import time
 from PIL import Image
+import os
 
 """Generated protocol buffer code."""
 from google.protobuf import descriptor as _descriptor
@@ -212,7 +213,12 @@ def start_torchserving(model_name, model_version,port,protocol):
 
 
 	logging.info(f"Container for {model_name} is ready to serve")
-	service_address = kube.get_service_address()
+	if os.getenv("DEPLOYMENT") == "local":
+		logging.info(f"Getting service address for local request")
+		service_address = kube.get_service_address(external=True,hostname=True)
+	else:
+		logging.info(f"Getting service address for within-cluster request")
+		service_address = kube.get_service_address()
 	
 	if protocol.lower() == "restful":
 		raise NotImplementedError

@@ -103,3 +103,51 @@ class VideoWriter(Output):
         except Exception as e:
             logging.error(e)
     
+
+class ActiveVideoWriter(VideoWriter):
+    def __init__(self,name,prefix,frames_per_second=30):
+        VideoWriter.__init__(self,name,prefix,frames_per_second)
+        count = 0
+        self._filename = f"{self._prefix}/{self._name}_{count}.mp4"
+        self._thumbfile = f'{self._prefix}/{self._name}_{count}_260.jpg'
+        self._meta["filenames"] = []
+        self._meta["filenames"].append(f'{self._name}_{count}.mp4')
+        
+        while exists(self._filename):
+            count += 1
+            self._filename = f'{self._prefix}/{self._name}_{count}.mp4'
+            self._thumbfile = f'{self._prefix}/{self._name}_{count}_260.jpg'
+            self._meta["filenames"].append(f'{self._name}_{count}.mp4')
+        self.write_meta()
+        rstring = random_string()
+        self._tempfile =  f'{tempdir()}/{datetime.now().strftime("%m_%d_%Y")}_{rstring}.mp4'            
+        
+    def run(self):
+        try:
+            while self.more():
+                item = self.get()
+                if self._writer is None:  
+                    logging.info("First item to video writer")
+                    logging.info(f"{type(item)} {item.size}")
+                    height,width,_ = item.size
+                    logging.info(f"Opening a new video with resolution {width}X{height}")
+                    self.open_writer(self._tempfile,width,height)
+                    logging.info(f"Creating thumbnail {self._thumbfile}")
+                    img = Image.fromarray(item.frame)
+                    with open(os.path.relpath(self._thumbfile), "wb") as f:
+                        byteImgIO = io.BytesIO()
+                        img.thumbnail((260,260))
+                        logging.info(f"thumbnail size {img.size}")
+                        img.save(byteImgIO, "JPEG")
+                        byteImgIO.seek(0)
+                        byteImg = byteImgIO.read()
+                        f.write(byteImg)
+                self._writer.write(item.frame_bgr)
+        except Exception as e:
+            logging.error(e)
+    
+    def close(self):
+        self.close_writer()
+        logging.info(f"Putting {self._tempfile} into {self._filename}")
+        put(self._tempfile,self._filename)
+                
