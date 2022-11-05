@@ -25,7 +25,8 @@ def test_segmenter_video(mock_put):
             "timed_gate_open_freq": 30,
             "timed_gate_opened_last": 30,
             "ntasks": 4,
-            "prefix": prefix
+            "prefix": prefix,
+            "size": "640,360"
         }
     }
     

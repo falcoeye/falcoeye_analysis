@@ -14,8 +14,8 @@ class OneLeakyOneTimedValve(Node):
         self._nodes = nodes
         self._leaky_gate_node = nodes[0]
         self._timed_gate_node = nodes[1]
-        self._timed_gate_open_freq = timed_gate_open_freq
-        self._timed_gate_opened_last = timed_gate_opened_last
+        self._timed_gate_open_freq = int(timed_gate_open_freq)
+        self._timed_gate_opened_last = int(timed_gate_opened_last)
         self._close_on_close = close_on_close
         self._counter = 0
            
@@ -30,17 +30,17 @@ class OneLeakyOneTimedValve(Node):
                     continue
                 item = self.get()
                 # TODO: eliminate ._data
-                logging.info(f"New item entered the valve {self._name}")
+                #logging.info(f"New item entered the valve {self._name}")
                 if self._counter < self._timed_gate_opened_last:
-                    logging.info(f"Directing {self._counter} to timed gate")
+                    #logging.info(f"Directing {self._counter} to timed gate")
                     self._timed_gate_node._data.put(item)
                     self._counter += 1
                 elif self._counter == self._timed_gate_open_freq:
-                    logging.info(f"Directing {self._counter} to timed gate and closing")
+                    #logging.info(f"Directing {self._counter} to timed gate and closing")
                     self._counter = 0
                     self._timed_gate_node._data.put(item)
                 else:
-                    logging.info(f"Directing {self._counter} to leaky gate")
+                    #logging.info(f"Directing {self._counter} to leaky gate")
                     self._leaky_gate_node._data.put(item)
                     self._counter += 1
             

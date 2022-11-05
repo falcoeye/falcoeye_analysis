@@ -5,6 +5,7 @@ from .output import *
 from .source import *
 from .controller import *
 from .draw import *
+from .edit import *
 
 
 

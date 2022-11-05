@@ -24,8 +24,9 @@ class ConcurrentTorchgRPCTasksThreadWrapper(ConcurrentRequestTaskThreadWrapper):
 
         try:
             host = self._node.get_service_address() 
-            logging.info(f"Starting concurrent gRPC looping for {self.name} on {host}")  
-            if os.getenv("DEPLOYMENT") != "local":
+            channel_security = os.getenv("CHANNEL","insecure")
+            logging.info(f"Starting concurrent gRPC looping for {self.name} on {host} with {channel_security} channel")  
+            if channel_security == "secure":
                 async with aio.secure_channel(host,
                     grpc.ssl_channel_credentials(),options=self._options) as channel:
                     stub = InferenceAPIsServiceStub(channel)

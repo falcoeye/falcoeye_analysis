@@ -52,7 +52,12 @@ class FalcoeyeFrame:
             return self._relative_time
         elif self._time_unit == "epoch":
            return datetime.datetime.fromtimestamp(self._relative_time)
-     
+
+    def resize(self,width,height):
+        img = Image.fromarray(self._frame)
+        self._frame = np.asarray(img.resize(size=(width, height)))
+        self._frame_bgr = cv2.cvtColor(self._frame, cv2.COLOR_RGB2BGR)
+
     def set_frame(self,frame):
         self._frame = frame
         self._frame_bgr = cv2.cvtColor(self._frame, cv2.COLOR_RGB2BGR)
