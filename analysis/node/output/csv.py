@@ -31,7 +31,7 @@ class CSVWriter(Output):
             "x-axis": self._xaxis,
             "y-axis": self._yaxis
         }
-        metafile = f"{self._prefix}/meta.json"
+        metafile = f"{self._prefix}/{self._name}_meta.json"
         logging.info(f"Creating meta data in {metafile}")
         with open(
                 os.path.relpath(metafile), "w"

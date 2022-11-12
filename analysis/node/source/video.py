@@ -11,7 +11,9 @@ class VideoFileSource(Source):
         Source.__init__(self,name)
         self._filename = filename
         self._sample_every = int(sample_every)
-        self._num_frames = int(length)
+        self._length = length
+        if type(length) == str:
+            self._length = int(length)
         self._frames_per_second = -1
         self._reader = None
         self.width = -1
@@ -24,11 +26,20 @@ class VideoFileSource(Source):
         self.width = int(self._reader.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self._reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self._frames_per_second = self._reader.get(cv2.CAP_PROP_FPS)
-        self._length = int(self._reader.get(cv2.CAP_PROP_FRAME_COUNT))
+        video_length = int(self._reader.get(cv2.CAP_PROP_FRAME_COUNT))
+        if type(self._length) == dict:
+            logging.info(f"Parsing length dictionary {self._length}")
+            unit = self._length["unit"]
+            value = self._length["value"]
+            if unit == "second" and value > 0:
+                self._length = min(video_length,self._frames_per_second*int(value))
+            elif value <= 0:
+                self._length = length    
+            else:
+                self._length = value
+        elif type(self._length) == int and self._length <= 0:
+            self._length = video_length
         logging.info(f"opened file length: {self._length}, fps: {self._frames_per_second} width: {self.width} height: {self.height}")
-        if self._num_frames < 0:
-            self._num_frames = self._length
-
     def seek(self,n):
         self._reader.set(cv2.CAP_PROP_POS_FRAMES,n)
 
@@ -37,7 +48,7 @@ class VideoFileSource(Source):
         counter = 0
         count = 0
         logging.info(f"Start streaming from {self._filename}")
-        while counter < self._num_frames:
+        while counter < self._length:
             hasFrame, frame = self._reader.read()
             if not hasFrame:
                 logging.info("No more frames. Breaking!")
@@ -45,7 +56,7 @@ class VideoFileSource(Source):
 
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                   
-            logging.info(f"Frame {counter}/{self._num_frames}")
+            logging.info(f"Frame {counter}/{self._length}")
             self.sink(FalcoeyeFrame(frame,count,counter,"frame"))
             #logging.info(f"Frame {counter}/{self._num_frames} sinked")
             count += 1

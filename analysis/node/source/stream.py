@@ -9,15 +9,18 @@ import streamlink
 import logging
 import time
 import os
-
 from .source import Source, FalcoeyeFrame
+
+
 
 class StreamingSource(Source):
     def __init__(self, name, sample_every=5, length=30,**kwargs):
         Source.__init__(self,name)
         self._running = False
         self._sample_every = int(sample_every)
-        self._length = float(length)
+        self._length = length
+        if type(length) == str:
+            self._length = float(length)
         self._streamer = None
         self._trial = 10
     

@@ -9,13 +9,27 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 WORKFLOWS = {
    os.path.basename(f).replace(".json",""): f for f in glob.glob(f"{basedir}/../../falcoeye_backend/initialization/workflows/*.json")
 }
+INLINE_WORKFLOWS = {
+   os.path.basename(f).replace(".json",""): f for f in glob.glob(f"{basedir}/../../falcoeye_backend/initialization/inline_workflows/*.json")
+}
+logging.info(INLINE_WORKFLOWS)
 VIDEOS = {
     os.path.basename(f).replace(".mp4",""): f for f in glob.glob(f"{basedir}/../../media/*.mp4")
 }
-def load_workflow_structure(name):
-    if name not in WORKFLOWS:
+def load_workflow_structure(name,inline=False):
+    if not inline and name not in WORKFLOWS:
+        logging.info("Couldn't find async workflow")
         return None
-    with open(WORKFLOWS[name]) as f:
+    elif inline and name not in INLINE_WORKFLOWS:
+        logging.info("Couldn't find inline workflow")
+        return None
+    
+    if inline:
+        wf = INLINE_WORKFLOWS[name]
+    else:
+        wf = WORKFLOWS[name]
+
+    with open(wf) as f:
         data = f.read()
     structure = json.loads(data)["structure"]
     return structure

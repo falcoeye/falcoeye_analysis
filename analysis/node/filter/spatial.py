@@ -3,8 +3,10 @@ from ..node import Node
 from PIL import ImageDraw, Image
 import numpy as np
 import logging
+
 class ZoneFilter(Node):
-    def __init__(self, name,points, width, height):
+    #TODO: remove width and height and fix old workflows 
+    def __init__(self, name,points, width=None, height=None):
         Node.__init__(self,name)
 
         if type(points) == str:
@@ -13,12 +15,17 @@ class ZoneFilter(Node):
         
         logging.info(f"Creating zone filter around {points} with mask size {width} X {height}")
         self._points = points
+        self._mask = None
+        self._initilized = False
+    
+    def initialize(self,width,height):
         self._mask = Image.new("L", (width, height), 0)
         ImageDraw.Draw(self._mask).polygon(
             [tuple(x) for x in self._points], outline=1, fill=1
         )
         self._mask = np.array(self._mask).astype(bool)
         self._width, self._height = width, height
+        self._initilized = True
 
     def translate_pixel(self, x, y):
         return int(x * self._width), int(y * self._height)
@@ -26,10 +33,15 @@ class ZoneFilter(Node):
     def run(self):
         # expecting items of type FalcoeyeDetction
         logging.info(f"Running {self.name}")
+        c = lambda x, y: self._mask[y, x]
         while self.more():
             item = self.get()
             n = item.count
-            c = lambda x, y: self._mask[y, x]
+            # TODO: assert different size, and try to remove somehow
+            if not self._initilized:
+                # assuming object with Falcoeye wrapper
+                height, width,_ = item.size
+                self.initialize(width,height)
             # TODO: refactor to better deleting mechanism
             index = 0
             for i in range(n):
@@ -43,5 +55,8 @@ class ZoneFilter(Node):
                     index += 1
 
             self.sink(item)
+
+
+
 
 

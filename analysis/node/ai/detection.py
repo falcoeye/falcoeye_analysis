@@ -4,7 +4,7 @@ import json
 import logging
 import numpy as np
 from .utils import get_color_from_number,non_max_suppression
-from PIL import Image
+from PIL import ImageDraw, Image
 
 
 class FalcoeyeDetection:
@@ -47,6 +47,10 @@ class FalcoeyeDetection:
     def timestamp(self):
         return self._frame.timestamp
 
+    def translate_pixel(self, x, y):
+        height,width,_ = self.size
+        return int(x * width), int(y * height)
+
     def iwidth(self,i):
         return np.abs(self._boxes[i][0]-self._boxes[i][2])
     
@@ -67,16 +71,43 @@ class FalcoeyeDetection:
     def get_box(self, i):
         return self._detections[i]["box"]
 
+    def keep_only(self,keys,inplace=True):
+        # TODO: maybe optimize in one loop 
+        if inplace:
+            n = self.count
+            index = 0
+            for _ in range(n):
+                cl = self.get_class(index)
+                if cl not in self._keys:
+                    self.delete(index)
+                else:
+                    # when deleting, no index increament due to shift in array
+                    index += 1
+        else:
+            raise NotImplementedError
     def delete(self,index):
         item = self._detections.pop(index)
         self._category_map[item["class"]] -= 1
         self._boxes.pop(index)
         self._classes.pop(index)
-        
+    
+    def blend(self,image,alpha=0.5,inplace=True):
+        return self._frame.blend(image,alpha,inplace)
 
-    def save_frame(self,path):
-        Image.fromarray(self._frame).save(f"{path}/{self._frame_number}.png")
-        
+    def draw_bounding_box(self,index,color,inplace=True):
+        if inplace:
+            xmin, ymin, xmax, ymax = self.get_box(index)
+            xmin, ymin = self.translate_pixel(xmin * 0.9999, ymin * 0.9999)
+            xmax, ymax = self.translate_pixel(xmax * 0.9999, ymax * 0.9999)
+            pil_img = Image.fromarray(self._frame.frame)
+            draw = ImageDraw.Draw(pil_img)
+            (left, right, top, bottom) = (xmin, xmax, ymin, ymax)
+            draw.line([(left, top), (left, bottom), (right, bottom), (right, top),
+               (left, top)],fill=tuple(color))
+            self._frame.set_frame(np.asarray(pil_img))
+        else:
+            raise NotImplementedError
+
     def __lt__(self,other):
         if type(other) == FalcoeyeDetection:
             return self._frame < other._frame
@@ -95,7 +126,7 @@ class FalcoeyeDetectionNode(Node):
     def __init__(self, name, 
     labelmap,
     min_score_thresh,
-    max_boxes,
+    max_boxes=100,
     overlap_thresh=0.3):
         Node.__init__(self,name)
         self._min_score_thresh = min_score_thresh

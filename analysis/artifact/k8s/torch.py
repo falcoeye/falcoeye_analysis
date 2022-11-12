@@ -265,8 +265,16 @@ class TorchServinggRPC(TorchServing):
 	
 		logging.info(f"New gRPC torch serving initialized for {model_name} on {service_address}")
 
-	def post(self,frame):
-		raise NotImplementedError
+	def post(self,stub,frame):
+		frame = Image.fromarray(frame)
+		output = io.BytesIO()
+		frame.save(output, format='JPEG')
+		input_data = {'data': output.getvalue()}
+		response = stub.Predictions(
+					PredictionsRequest(model_name=self._name,
+					input=input_data))
+		prediction = response.prediction
+		return prediction
 			
 	async def post_async(self,stub,frame):
 		try:

@@ -40,7 +40,10 @@ logging.info(data)
 
 # Creating workflow handler
 workflow = WorkflowFactory.create_from_dict(workflow_struct,analysis)
-workflow.run_sequentially_async()
-
-while workflow._busy:
-    pass
+inline = workflow_struct.get("inline",False)
+if inline:
+    workflow.run_sequentially()
+else:
+    workflow.run_sequentially_async()
+    while workflow._busy:
+        pass

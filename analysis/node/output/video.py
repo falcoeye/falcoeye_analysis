@@ -24,7 +24,7 @@ class VideoWriter(Output):
         mkdir(prefix)
 
     def write_meta(self):
-        metafile = f"{self._prefix}/meta.json" 
+        metafile = f"{self._prefix}/{self._name}_meta.json" 
         logging.info(f"Creating meta data in {metafile}")
         with open(
                 os.path.relpath(metafile), "w"

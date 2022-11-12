@@ -13,8 +13,8 @@ class ConcurrentTorchgRPCTasksThreadWrapper(ConcurrentRequestTaskThreadWrapper):
     def __init__(self,name,node,ntasks=2):
         ConcurrentRequestTaskThreadWrapper.__init__(self,name,node,ntasks)
         self._options  = [
-                    ('grpc.max_send_message_length', ConcurrentTorchgRPCTasksThreadWrapper.GRPC_MAX_RECEIVE_MESSAGE_LENGTH),
-                    ('grpc.max_receive_message_length', ConcurrentTorchgRPCTasksThreadWrapper.GRPC_MAX_RECEIVE_MESSAGE_LENGTH)]
+                    ('grpc.max_send_message_length', node.GRPC_MAX_RECEIVE_MESSAGE_LENGTH),
+                    ('grpc.max_receive_message_length', node.GRPC_MAX_RECEIVE_MESSAGE_LENGTH)]
 
         
     async def run_forever_(self):
