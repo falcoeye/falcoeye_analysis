@@ -22,8 +22,8 @@ class Serializer(Output):
         mkdir(prefix)
 
     def write_meta(self):
-        self._meta["filenames"] = [os.path.basename(f) for f in glob.glob(f"{self._prefix}/*.json")]
-        metafile = f"{self._prefix}/meta.json" 
+        self._meta["filenames"] = [os.path.basename(f) for f in glob.glob(f"{self._prefix}/{self._name}_*.json")]
+        metafile = f"{self._prefix}/{self._name}_meta.json" 
         logging.info(f"Creating meta data in {metafile}")
         with open(
                 os.path.relpath(metafile), "w"
@@ -39,7 +39,7 @@ class Serializer(Output):
             while self.more():
                 item = self.get()
                 # can only serizlize FalcoeyeFrame or its wrappers
-                filename = f"{self._prefix}/{item.framestamp}.json"
+                filename = f"{self._prefix}/{self._name}_{item.framestamp}.json"
                 with open(filename,"w") as f:
                     f.write(json.dumps(item.to_dict(),indent=4))
             self.write_meta()
