@@ -78,7 +78,7 @@ class FalcoeyeDetection:
             index = 0
             for _ in range(n):
                 cl = self.get_class(index)
-                if cl not in self._keys:
+                if cl not in keys:
                     self.delete(index)
                 else:
                     # when deleting, no index increament due to shift in array
