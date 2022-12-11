@@ -10,17 +10,18 @@ class Model(Node):
     def __init__(self, name,
         model_name,
         version,
-        protocol="gRPC"
+        protocol="gRPC",
+        initialize=True
         ):
         Node.__init__(self,name)
         self._model_name = model_name
         self._version = version
         self._model_server = None
         self._protocol = protocol
-        
-        self._init_serving_service()
-        if not self._serving_ready:
-            logging.warning(f"Model server is off or doesn't exists {model_name}")
+        if initialize:
+            self._init_serving_service()
+            if not self._serving_ready:
+                logging.warning(f"Model server is off or doesn't exists {model_name}")
 
     def _init_serving_service(self):
         raise NotImplementedError
@@ -86,13 +87,19 @@ class TFModel(Model):
     def __init__(self, name,
         model_name,
         version,
-        protocol="gRPC"
+        protocol="gRPC",
+        input_name="input_tensor"
         ):
-        Model.__init__(self,name,model_name,version,protocol)
+        Model.__init__(self,name,model_name,
+            version,protocol,initialize=False)
+        self._input_name = input_name
+        self._init_serving_service()
 
     def _init_serving_service(self):
-        
-        self._model_server = get_model_server(self._model_name,"tf",self._version,self._protocol)
+        logging.warning(f"Initializing model server with input name {self._input_name}")
+        self._model_server = get_model_server(self._model_name,
+        "tf",self._version,self._protocol,True,
+        self._input_name)
         if self._model_server is None:
             logging.warning(f"Model server is off or doesn't exists {self._model_name}")
             self._serving_ready = False

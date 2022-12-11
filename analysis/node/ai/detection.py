@@ -5,28 +5,16 @@ import logging
 import numpy as np
 from .utils import get_color_from_number,non_max_suppression
 from PIL import ImageDraw, Image
+from .wrapper import FalcoeyeAIWrapper
 
-
-class FalcoeyeDetection:
+class FalcoeyeDetection(FalcoeyeAIWrapper):
     def __init__(self,frame,detections, category_map):
-        self._frame = frame
+        FalcoeyeAIWrapper.__init__(self,frame)
         self._detections = detections
         self._category_map = {c:len(v) for c,v in category_map.items()}
         self._boxes = [d["box"] for d in self._detections]
         self._classes = [d["class"] for d in self._detections]
 
-    @property
-    def size(self):
-        return self._frame.frame.shape
-    
-    @property
-    def frame(self):
-        return self._frame.frame
-
-    @property
-    def frame_bgr(self):
-        return self._frame.frame_bgr
-    
     @property
     def count(self):
         return len(self._detections)
@@ -38,14 +26,6 @@ class FalcoeyeDetection:
     @property
     def classes(self):
         return self._classes
-
-    @property
-    def framestamp(self):
-        return self._frame.framestamp
-    
-    @property
-    def timestamp(self):
-        return self._frame.timestamp
 
     def translate_pixel(self, x, y):
         height,width,_ = self.size
@@ -85,6 +65,7 @@ class FalcoeyeDetection:
                     index += 1
         else:
             raise NotImplementedError
+    
     def delete(self,index):
         item = self._detections.pop(index)
         self._category_map[item["class"]] -= 1
@@ -110,17 +91,13 @@ class FalcoeyeDetection:
 
     def __lt__(self,other):
         if type(other) == FalcoeyeDetection:
-            return self._frame < other._frame
-        else:
-            # assuming other is FalcoeyeFrame
-            return self._frame < other
+            return self._frame < other._frame     
+        return FalcoeyeAIWrapper.__lt__(self,other)
     
     def __eq__(self,other):
         if type(other) == FalcoeyeDetection:
             return self._frame == other._frame
-        else:
-            # assuming other is FalcoeyeFrame or int
-            return self._frame == other
+        return FalcoeyeAIWrapper.__eq__(self,other)
 
 class FalcoeyeDetectionNode(Node):
     def __init__(self, name, 

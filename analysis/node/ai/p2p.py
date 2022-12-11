@@ -3,53 +3,27 @@ from ...artifact import get_model_server
 import logging
 import numpy as np
 from PIL import Image
+from .wrapper import FalcoeyeAIWrapper
 
-
-class FalcoeyeP2P:
+class FalcoeyeP2P(FalcoeyeAIWrapper):
+    
     def __init__(self,frame,points):
-        self._frame = frame
+        FalcoeyeAIWrapper.__init__(self,frame)
         self._points = points
-        
-    @property
-    def size(self):
-        return self._frame.size
-    
-    @property
-    def frame(self):
-        return self._frame.frame
 
-    @property
-    def frame_bgr(self):
-        return self._frame.frame_bgr
-    
     @property
     def count(self):
         return self._points.shape[0]
 
-    def save_frame(self,path):
-        Image.fromarray(self._frame).save(f"{path}/{self._frame_number}.png")
-    
-    @property
-    def framestamp(self):
-        return self._frame.framestamp
-    
-    @property
-    def timestamp(self):
-        return self._frame.timestamp
-
     def __lt__(self,other):
-        if type(other) == FalcoeyeDetection:
-            return self._frame < other._frame
-        else:
-            # assuming other is FalcoeyeFrame
-            return self._frame < other
+        if type(other) == FalcoeyeP2P:
+            return self._frame < other._frame     
+        return FalcoeyeAIWrapper.__lt__(self,other)
     
     def __eq__(self,other):
-        if type(other) == FalcoeyeDetection:
+        if type(other) == FalcoeyeP2P:
             return self._frame == other._frame
-        else:
-            # assuming other is FalcoeyeFrame or int
-            return self._frame == other
+        return FalcoeyeAIWrapper.__eq__(self,other)
 
 class FalcoeyeP2PNode(Node):
     

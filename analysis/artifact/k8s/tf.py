@@ -10,7 +10,10 @@ import time
 import os
 
 
-def start_tfserving(model_name, model_version,port,protocol):
+def start_tfserving(model_name, 
+	model_version,
+	port,protocol,
+	input_name='input_tensor'):
 	logging.info(f"Starting tensorflow serving on port {port} using {protocol} protocol")
 	if protocol.lower() == "restful":
 		target_port = 8501
@@ -49,7 +52,7 @@ def start_tfserving(model_name, model_version,port,protocol):
 		if protocol.lower() == "restful":
 			tfserver = TensorflowServingRESTFul(model_name,model_version,service_address,kube)
 		elif protocol.lower() == "grpc":	
-			tfserver = TensorflowServinggRPC(model_name,model_version,service_address,kube)
+			tfserver = TensorflowServinggRPC(model_name,model_version,service_address,kube,input_name)
 		return tfserver
 	else:
 		logging.error(f"Couldn't start container for {model_name}")
@@ -117,11 +120,12 @@ class TensorflowServinggRPC(TensorflowServing):
 		model_name,
 		model_version,
 		service_address,
-		kube):
+		kube,
+		input_name):
 		TensorflowServing.__init__(self,model_name,
 			model_version,service_address,kube)
-		
-		logging.info(f"New gRPC tensorflow serving initialized for {model_name} on {service_address}")
+		self._input_name = input_name
+		logging.info(f"New gRPC tensorflow serving initialized for {model_name} on {service_address} with input name {self._input_name}")
 
 	def post(self,frame):
 		raise NotImplementedError
@@ -135,7 +139,7 @@ class TensorflowServinggRPC(TensorflowServing):
 			request.model_spec.signature_name = 'serving_default'
 			logging.info(f"Expanding frame")
 			frame = np.expand_dims(frame, axis=0) 
-			request.inputs['input_tensor'].CopyFrom(tf.make_tensor_proto(frame))
+			request.inputs[self._input_name].CopyFrom(tf.make_tensor_proto(frame))
 			logging.info(f"Predicting")
 			result = await stub.Predict(request)
 			logging.info("Prediction received")

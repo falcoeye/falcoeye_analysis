@@ -20,8 +20,6 @@ class ConcurrentTFgRPCTasksThreadWrapper(ConcurrentRequestTaskThreadWrapper):
         """
         Critical node: failure here should cause the workflow to fail
         """
-
-
         try:
             host = self._node.get_service_address()
             channel_security = os.getenv("CHANNEL","insecure")

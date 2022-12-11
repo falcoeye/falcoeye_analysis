@@ -75,7 +75,11 @@ class FalcoeyeFrame:
                 Image.fromarray(image), 
                 alpha).convert("RGB"))
 
-    
+    def save(self,prefix):
+        img = Image.fromarray(self._frame)
+        logging.info(f"writing image for {self.framestamp}")
+        img.save(f"{prefix}/{self.framestamp}.jpg")
+
     def __lt__(self,other):
         return self._frame_number < other.framestamp
     

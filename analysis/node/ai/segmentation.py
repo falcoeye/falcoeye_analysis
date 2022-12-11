@@ -4,12 +4,13 @@ import logging
 import numpy as np
 from PIL import Image
 import base64
+from .wrapper import FalcoeyeAIWrapper
 
-class FalcoeyeSegmentation:
+class FalcoeyeSegmentation(FalcoeyeAIWrapper):
     def __init__(self,frame,segments,
         obj_ids,obj_names,colors,
         rgb_map,ignore_value):
-        self._frame = frame
+        FalcoeyeAIWrapper.__init__(self,frame)
         self._segments = segments
         self._obj_ids = obj_ids
         self._obj_names = obj_names
@@ -18,35 +19,12 @@ class FalcoeyeSegmentation:
         self._ignore_value = ignore_value
 
     @property
-    def size(self):
-        return self._frame.frame.shape
-    
-    @property
-    def frame(self):
-        return self._frame.frame
-
-    @property
-    def frame_bgr(self):
-        return self._frame.frame_bgr
-        
-    @property
     def segments(self):
         return self._segments
     
     @property
     def rgb_map(self):
         return self._rgb_map
-
-    @property
-    def framestamp(self):
-        return self._frame.framestamp
-    
-    @property
-    def timestamp(self):
-        return self._frame.timestamp
-    
-    def set_frame(self,frame):
-        self._frame.set_frame(frame)
 
     def mask_of(self,obj_name):
         a = np.zeros_like(self._segments)
@@ -94,9 +72,6 @@ class FalcoeyeSegmentation:
             return self
         else:
             raise NotImplementedError
-    
-    def save_frame(self,path):
-        Image.fromarray(self._frame).save(f"{path}/{self._frame_number}.png")
 
     def to_dict(self):
         dic = dict(
@@ -113,17 +88,13 @@ class FalcoeyeSegmentation:
 
     def __lt__(self,other):
         if type(other) == FalcoeyeSegmentation:
-            return self._frame < other._frame
-        else:
-            # assuming other is FalcoeyeFrame
-            return self._frame < other
+            return self._frame < other._frame     
+        return FalcoeyeAIWrapper.__lt__(self,other)
     
     def __eq__(self,other):
         if type(other) == FalcoeyeSegmentation:
             return self._frame == other._frame
-        else:
-            # assuming other is FalcoeyeFrame or int
-            return self._frame == other
+        return FalcoeyeAIWrapper.__eq__(self,other)
 
 class FalcoeyeSegmentationNode(Node):
     def __init__(self, name, 
