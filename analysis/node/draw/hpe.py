@@ -10,6 +10,7 @@ class HPEDrawer(Node):
         # expecting items of type FalcoeyeFrame or a wrapper for it
         while self.more():
             item = self.get()
+            logging.info(item)
             # assuming FalcoeyeOpenPoseHPE or a wrapper for it
             logging.info(f"Running {self._name} on item {item.framestamp}")
             item.draw()

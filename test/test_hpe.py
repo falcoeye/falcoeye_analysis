@@ -33,3 +33,31 @@ def test_hpe(mock_put):
 
     while workflow._busy:
         pass
+
+@mock.patch("requests.put", side_effect=mocked_finish_put)
+def test_with_tracking_hpe(mock_put):
+    logging.info("Launching test_with_tracking_hpe")
+    wf = load_workflow_structure("human_pose_with_tracking")
+    assert wf
+    video = get_video("ocean_city_1")
+    assert video
+    prefix = get_prefix("test_hpe_with_tra")
+    analysis = {
+        "id":"test_with_tracking_hpe",
+        "args": {
+            "filename": video,
+            "length": 30,
+            "sample_every": 1,
+            "frequency": 30,
+            "ntasks": 4,
+            "prefix": prefix
+        }
+    }
+    
+    # Creating workflow handler
+    workflow = WorkflowFactory.create_from_dict(wf,analysis)
+    logging.info("Starting the workflow")
+    workflow.run_sequentially_async()
+
+    while workflow._busy:
+        pass

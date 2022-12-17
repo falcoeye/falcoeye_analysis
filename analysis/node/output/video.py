@@ -142,6 +142,7 @@ class ActiveVideoWriter(VideoWriter):
                         byteImgIO.seek(0)
                         byteImg = byteImgIO.read()
                         f.write(byteImg)
+                logging.info(f"item is of type {type(item)}")
                 self._writer.write(item.frame_bgr)
         except Exception as e:
             logging.error(e)

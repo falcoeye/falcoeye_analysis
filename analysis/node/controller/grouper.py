@@ -2,6 +2,7 @@ from ..node import Node
 from threading import Thread
 import logging
 import queue
+import traceback
 
 
 class SequenceRunner(Node):
@@ -84,6 +85,7 @@ class SequenceRunner(Node):
 
         except Exception as e:
             logging.error(e)
+            logging.error(traceback.format_exc())
             self._error_callback(self._name,str(e))
     
     def open_nodes(self):

@@ -113,10 +113,12 @@ class WorkflowFactory:
         nodes = {}
         for n in nodes_json:
             logging.info(f"creating node {n}")
-            if "nodes" in n:
-                n["nodes"] = [nodes[i] for i in n["nodes"]]
-            elif "node" in n:
-                n["node"] = nodes[n["node"]]
+            for k in n.keys():
+                if "nodes" in k:
+                    n[k] = [nodes[i] for i in n[k]]
+                elif "node" in k:
+                    n[k] = nodes[n[k]]
+            logging.info(n)
             nodes[n["name"]] = create_node_from_dict(n)
         
         

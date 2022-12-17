@@ -4,6 +4,7 @@ import logging
 import grpc
 from ...artifact.k8s.torch import InferenceAPIsServiceStub
 import os
+import traceback
 
 class Model(Node):
     
@@ -115,9 +116,12 @@ class TorchModel(Model):
     def __init__(self, name,
         model_name,
         version,
-        protocol="gRPC"
+        protocol="gRPC",
+
         ):
         Model.__init__(self,name,model_name,version,protocol)
+        self._stub = None
+        self._chennel = None
 
     def _init_serving_service(self):
         self._model_server = get_model_server(self._model_name,"torch",self._version,self._protocol)
@@ -132,22 +136,46 @@ class TorchModel(Model):
         
         if self._protocol == "gRPC":
             try:
-                host = self.get_service_address() 
-                channel_security = os.getenv("CHANNEL","insecure")
-                logging.info(f"Starting concurrent gRPC looping for {self.name} on {host} with {channel_security} channel")  
-                if channel_security == "secure":
-                    channel = grpc.secure_channel(host,
-                        grpc.ssl_channel_credentials(),options=TorchModel.GRPC_OPTIONS)
-                    stub = InferenceAPIsServiceStub(channel)
-                    logging.info(f"Starting stub for {self.name}  tasks in secure_channel") 
-                else:
-                    channel = grpc.insecure_channel(host, options=TorchModel.GRPC_OPTIONS)
-                    stub = InferenceAPIsServiceStub(channel)
-                    logging.info(f"Starting stub for {self.name} tasks in insecure_channel") 
-
-                Model.run(self,stub)
+                self._initialize_grpc()
+                Model.run(self,self._stub)
 
             except Exception as e:
                 logging.error(e)
         else:
             raise NotImplementedError
+    
+    def _initialize_grpc(self):
+        try:
+            host = self.get_service_address() 
+            channel_security = os.getenv("CHANNEL","insecure")
+            logging.info(f"Starting concurrent gRPC looping for {self.name} on {host} with {channel_security} channel")  
+            if channel_security == "secure":
+                self._channel = grpc.secure_channel(host,
+                    grpc.ssl_channel_credentials(),options=TorchModel.GRPC_OPTIONS)
+                self._stub = InferenceAPIsServiceStub(self._channel)
+                logging.info(f"Starting stub for {self.name}  tasks in secure_channel") 
+            else:
+                self._channel = grpc.insecure_channel(host, options=TorchModel.GRPC_OPTIONS)
+                self._stub = InferenceAPIsServiceStub(self._channel)
+                logging.info(f"Starting stub for {self.name} tasks in insecure_channel") 
+        except Exception as e:
+            logging.error(e)
+    
+    def __call__(self,data):
+        if self._protocol == "gRPC":
+            if not self._is_ready():
+                return None
+
+            if self._stub is None:
+                self._initialize_grpc()
+            
+            try:
+                logging.info(f"New data to post to container")
+                raw_detections =  self._model_server.post(self._stub,data)
+                return raw_detections
+            except Exception as e:
+                logging.error(traceback.format_exc())
+                return None
+        else:
+            raise NotImplementedError
+        
