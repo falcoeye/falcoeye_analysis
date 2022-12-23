@@ -22,6 +22,12 @@ class TrackingItem(FalcoeyeAIWrapper):
     def set_tracked_id(self,index,id):
         self._ids[index] = id
     
+    def get_tracked_id(self,index):
+        return self._ids[index]
+
+    def get_tracked_ids(self):
+        return self._ids
+
     def delete_non_tracked(self):
         non_tracked = [i for i,v in enumerate(self._ids) if v==-1]
         for index in sorted(non_tracked, reverse=True):
@@ -34,13 +40,21 @@ class TrackingItem(FalcoeyeAIWrapper):
     def get_boxes(self):
         return self._aiwrapper.get_boxes()
     
+    def get_box(self,index):
+        return self._aiwrapper.get_box(index)
+
     def set_box(self,index,box):
         self._aiwrapper.set_box(index,box)
 
-    def draw(self):
-        self._aiwrapper.draw()
+    def get_flatten_keypoints(self,index):
+        return self._aiwrapper.get_flatten_keypoints(index)
 
+    def draw(self,tracking=True):
         logging.info(f"Drawing tracked ids {self._ids}")
+        self._aiwrapper.draw()
+        if not tracking:
+            return 
+
         thickness = 1
         scale = 0.6 
         font = cv2.FONT_HERSHEY_COMPLEX
@@ -90,7 +104,7 @@ class DeepSortTracker(Node):
 
     def _get_features(self, bbox_tlbr, ori_img):
         features = []
-        logging.info("Getting feature")
+        #logging.info("Getting feature")
         for box in bbox_tlbr:
             x1, y1, x2, y2 = map(int, box)
             im = ori_img[y1:y2, x1:x2]
@@ -98,7 +112,7 @@ class DeepSortTracker(Node):
             ifeatures = np.frombuffer(ifeatures,dtype=np.float32)
             features.append(ifeatures)
         features = np.array(features)
-        logging.info(f"Features shape {features.shape}")
+        #logging.info(f"Features shape {features.shape}")
         return features
 
     def _predict(self):

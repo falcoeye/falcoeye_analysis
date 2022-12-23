@@ -161,7 +161,7 @@ class TorchModel(Model):
         except Exception as e:
             logging.error(e)
     
-    def __call__(self,data):
+    def __call__(self,data,as_image=True):
         if self._protocol == "gRPC":
             if not self._is_ready():
                 return None
@@ -170,8 +170,11 @@ class TorchModel(Model):
                 self._initialize_grpc()
             
             try:
-                logging.info(f"New data to post to container")
-                raw_detections =  self._model_server.post(self._stub,data)
+                #logging.info(
+                #    f"New data with shape {data.shape} to post to container")
+                raw_detections =  self._model_server.post(self._stub,
+                    data,
+                    as_image)
                 return raw_detections
             except Exception as e:
                 logging.error(traceback.format_exc())

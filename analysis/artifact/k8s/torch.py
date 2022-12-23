@@ -265,11 +265,18 @@ class TorchServinggRPC(TorchServing):
 	
 		logging.info(f"New gRPC torch serving initialized for {model_name} on {service_address}")
 
-	def post(self,stub,frame):
-		frame = Image.fromarray(frame)
-		output = io.BytesIO()
-		frame.save(output, format='JPEG')
-		input_data = {'data': output.getvalue()}
+	def post(self,stub,frame,as_image=True):
+		if as_image:
+			#logging.info(f"Posting as image with shape {frame.shape}")
+			frame = Image.fromarray(frame)
+			output = io.BytesIO()
+			frame.save(output, format='JPEG')
+			output = output.getvalue()
+		else:
+			#logging.info(f"Posting as data with shape {frame.shape}")
+			output = frame.astype(np.float32).tobytes()
+			
+		input_data = {'data': output}
 		response = stub.Predictions(
 					PredictionsRequest(model_name=self._name,
 					input=input_data))

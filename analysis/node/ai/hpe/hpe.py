@@ -19,6 +19,7 @@ class FalcoeyeOpenPoseHPE(FalcoeyeAIWrapper):
         FalcoeyeAIWrapper.__init__(self,frame)
         self._boxes = None
         self._skeletons = None
+        self._keypoints = None
         self._heatmap = heatmap
         self._pafs = pafs
         self._resize_factor = resize_factor
@@ -29,6 +30,7 @@ class FalcoeyeOpenPoseHPE(FalcoeyeAIWrapper):
             skeletons = estimate(BODY_CONFIG, self._connections)
             self._skeletons = []
             self._boxes = []
+            self._keypoints = []
             xy_by_id = dict([(item[3], np.array([item[0]/self._heatmap.shape[1], item[1]/self._heatmap.shape[0]])) for sublist in self._coordinates.values() for item in sublist])
             for i,s in enumerate(skeletons):
                 s = s.astype(np.int32)
@@ -49,6 +51,8 @@ class FalcoeyeOpenPoseHPE(FalcoeyeAIWrapper):
                     continue
                 self._skeletons.append(s)
                 self._boxes.append(b)
+                self._keypoints.append(keypoints)
+                
             # for tracking
             logging.info(f"Skeleton for frame {frame.framestamp} calculated")
         except Exception as e:
@@ -91,9 +95,13 @@ class FalcoeyeOpenPoseHPE(FalcoeyeAIWrapper):
     def get_box(self,index):
         # TODO: check if boxes is defined
         return self._boxes[index]
-
+    
     def set_box(self,index,box):
         self._boxes[index] = box
+
+    def get_flatten_keypoints(self,index):
+        flatten_keypoints = self._keypoints[index][:,1:].flatten()
+        return flatten_keypoints
 
     def draw(self):
         # since open pose has 3 max pooling layers, resize_fac = 8
@@ -130,10 +138,6 @@ class FalcoeyeOpenPoseHPE(FalcoeyeAIWrapper):
     def __get__(self,index):
         return self._skeletons[index]
     
-    
-
-
-
 class FalcoeyeHPENode(Node):
     def __init__(self, name):
         Node.__init__(self,name)

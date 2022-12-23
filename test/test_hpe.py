@@ -46,10 +46,10 @@ def test_with_tracking_hpe(mock_put):
         "id":"test_with_tracking_hpe",
         "args": {
             "filename": video,
-            "length": 30,
-            "sample_every": 1,
+            "length": 30*60,
+            "sample_every": 3,
             "frequency": 30,
-            "ntasks": 4,
+            "ntasks": 8,
             "prefix": prefix
         }
     }
