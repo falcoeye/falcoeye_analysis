@@ -6,6 +6,7 @@ from .source import *
 from .controller import *
 from .draw import *
 from .edit import *
+from .msc import *
 
 
 

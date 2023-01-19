@@ -6,12 +6,14 @@ import numpy as np
 from .utils import get_color_from_number,non_max_suppression
 from PIL import ImageDraw, Image
 from .wrapper import FalcoeyeAIWrapper
+import cv2
 
 class FalcoeyeDetection(FalcoeyeAIWrapper):
-    def __init__(self,frame,detections, category_map):
+    def __init__(self,frame,detections, category_map,width_height=False):
         FalcoeyeAIWrapper.__init__(self,frame)
         self._detections = detections
         self._category_map = {c:len(v) for c,v in category_map.items()}
+
         self._boxes = [d["box"] for d in self._detections]
         self._classes = [d["class"] for d in self._detections]
 
@@ -75,17 +77,31 @@ class FalcoeyeDetection(FalcoeyeAIWrapper):
     def blend(self,image,alpha=0.5,inplace=True):
         return self._frame.blend(image,alpha,inplace)
 
-    def draw_bounding_box(self,index,color,inplace=True):
+    def draw_bounding_box(self,index,color,inplace=True,translate=True):
         if inplace:
             xmin, ymin, xmax, ymax = self.get_box(index)
-            xmin, ymin = self.translate_pixel(xmin * 0.9999, ymin * 0.9999)
-            xmax, ymax = self.translate_pixel(xmax * 0.9999, ymax * 0.9999)
-            pil_img = Image.fromarray(self._frame.frame)
-            draw = ImageDraw.Draw(pil_img)
-            (left, right, top, bottom) = (xmin, xmax, ymin, ymax)
-            draw.line([(left, top), (left, bottom), (right, bottom), (right, top),
-               (left, top)],fill=tuple(color))
-            self._frame.set_frame(np.asarray(pil_img))
+            if translate:
+                xmin, ymin = self.translate_pixel(xmin * 0.9999, ymin * 0.9999)
+                xmax, ymax = self.translate_pixel(xmax * 0.9999, ymax * 0.9999)
+            img = self._frame.frame.copy()
+            thickness = 2
+            scale = 0.6 
+            font = cv2.FONT_HERSHEY_COMPLEX
+            def get_label_position(label):  
+                w, h = cv2.getTextSize(label, font, scale, thickness)[0]
+                offset_w, offset_h = w + 3, h + 5
+                xmax = x1 + offset_w
+                ymax = y1 + offset_h
+                y_text = ymax - 2
+                return xmax, ymax, y_text
+            
+            label = self.get_class(index)
+            x1, y1, x2, y2 = int(xmin), int(ymin), int(xmax), int(ymax)
+            cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
+            label_loc = get_label_position(label)
+            cv2.putText(img, label, (x1+1, label_loc[2]), font,
+                    scale,(0, 0, 0), thickness)
+            self._frame.set_frame(img)
         else:
             raise NotImplementedError
 
@@ -225,15 +241,22 @@ class FalcoeyeTorchDetectionNode(FalcoeyeDetectionNode):
         labelmap,
         min_score_thresh,
         max_boxes,
-        overlap_thresh=0.3):
+        overlap_thresh=0.3,
+        width_height_box=False):
         FalcoeyeDetectionNode.__init__(self,name, labelmap,
         min_score_thresh,
         max_boxes,
         overlap_thresh)
+        self._width_height_box = width_height_box
         
 
     def translate(self,detections):
         bboxes = detections[..., :4].reshape(-1,4)
+        if self._width_height_box:
+            # copy because it is read-only
+            bboxes = bboxes.copy()
+            bboxes[:,2] = bboxes[:,2]+bboxes[:,0]
+            bboxes[:,3] = bboxes[:,3]+bboxes[:,1]
         scores = detections[..., 4]
         classes = detections[..., 5]
         return self.finalize(bboxes,classes,scores)

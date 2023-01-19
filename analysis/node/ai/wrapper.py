@@ -6,6 +6,7 @@ import numpy as np
 class FalcoeyeAIWrapper:
     def __init__(self,frame):
         self._frame = frame
+        self._meta = {}
     
     @property
     def size(self):
@@ -27,7 +28,12 @@ class FalcoeyeAIWrapper:
     def timestamp(self):
         return self._frame.timestamp
 
+    def add_meta(self,key,value):
+        self._meta[key] = value
     
+    def get_meta(self,key):
+        return self._meta[key]
+
     def set_frame(self,frame):
         self._frame.set_frame(frame)
     
