@@ -286,3 +286,81 @@ class FalcoeyeTorchDetectionNode(FalcoeyeDetectionNode):
                 self.sink(fe_detection)
             except Exception as e:
                 logging.error(e)
+
+class FalcoeyeTritonDetectionNode(FalcoeyeDetectionNode):
+    def __init__(self, name, 
+        labelmap,
+        min_score_thresh,
+        max_boxes,
+        overlap_thresh=0.3):
+        FalcoeyeDetectionNode.__init__(self, name,
+            labelmap,
+            min_score_thresh,
+            max_boxes,
+            overlap_thresh)
+        
+    def translate(self, detections):
+        """Translates Triton server output format to the standard detection format"""
+        logging.info("Translating Triton detection output")
+        
+        if detections is None or not isinstance(detections, dict):
+            logging.warning(f"Invalid detection format received: {type(detections)}")
+            return [], {k:[] for k in self._category_index.values()}
+        
+        try:
+            # Get the number of detections (should be a scalar)
+            num_dets = int(detections['num_dets'].flatten()[0])
+            logging.info(f"Processing {num_dets} detections")
+            
+            # Extract detections from the first batch
+            boxes = detections['det_boxes'][0, :num_dets]
+            scores = detections['det_scores'][0, :num_dets]
+            classes = detections['det_classes'][0, :num_dets].astype(int)
+            
+            return self.finalize(boxes, classes, scores)
+            
+        except Exception as e:
+            logging.error(f"Error processing detections: {str(e)}")
+            traceback.print_exc()  # Add stack trace for debugging
+            return [], {k:[] for k in self._category_index.values()}
+    
+    def run(self):
+        """
+        Processes detection results from Triton server output
+        """
+        logging.info("Running Triton detection node")
+        while self.more():
+            item = self.get()
+            frame, raw_detections = item
+            
+            try:
+                # Handle different input formats
+                if isinstance(raw_detections, dict) and "outputs" in raw_detections:
+                    # Handle gRPC response format
+                    detections = {
+                        "num_dets": np.array(raw_detections.outputs["num_dets"].as_numpy()),
+                        "det_boxes": np.array(raw_detections.outputs["det_boxes"].as_numpy()),
+                        "det_scores": np.array(raw_detections.outputs["det_scores"].as_numpy()),
+                        "det_classes": np.array(raw_detections.outputs["det_classes"].as_numpy())
+                    }
+                elif isinstance(raw_detections, dict) and all(key in raw_detections for key in ["num_dets", "det_boxes", "det_scores", "det_classes"]):
+                    # Already in the correct format
+                    detections = raw_detections
+                else:
+                    # Handle invalid input
+                    logging.warning(f"Invalid detection format received: {type(raw_detections)}")
+                    detections = {
+                        "num_dets": np.array([0]),
+                        "det_boxes": np.array([]),
+                        "det_scores": np.array([]),
+                        "det_classes": np.array([])
+                    }
+                
+                logging.info(f"Processing frame for Triton detection: {frame.framestamp} {frame.timestamp}")
+                detections, category_map = self.translate(detections)
+                fe_detection = FalcoeyeDetection(frame, detections, category_map)
+                self.sink(fe_detection)
+                
+            except Exception as e:
+                logging.error(f"Error processing Triton detection: {str(e)}")
+                continue

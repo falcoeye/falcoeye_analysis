@@ -1,6 +1,7 @@
 from .core import FalcoServingKube
 from .tf import start_tfserving
 from .torch import start_torchserving
+from .triton import start_tritonserving
 import logging
 from threading import Lock
 
@@ -21,6 +22,8 @@ def start_service(model_name,vendor,
 	elif vendor == "torch":
 		# input_name is not yet needed for torch serving
 		return start_torchserving(model_name,model_version,port,protocol)
+	elif vendor == "triton":
+		return start_tritonserving(model_name,model_version,port,protocol)
 
 def get_service_server(model_name,
 	vendor,model_version,

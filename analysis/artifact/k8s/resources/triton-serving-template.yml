@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $appname
+spec:
+  selector:
+    matchLabels:
+      app: $appname
+  replicas: $replicas
+  template:
+    metadata:
+      labels:
+        app: $appname
+      annotations:
+        nvidia.com/experimental-gpus-allowed: "all"
+    spec:
+      containers:
+        - name: $appname
+          image: $image
+          imagePullPolicy: Never
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+          ports:
+            - name: http
+              containerPort: 8000
+            - name: grpc
+              containerPort: 8001
+            - name: metrics
+              containerPort: 8002
+          env:
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+          volumeMounts:
+            - name: nvidia-dev
+              mountPath: /dev/nvidia0
+            - name: nvidia-dev-ctl
+              mountPath: /dev/nvidiactl
+            - name: nvidia-dev-caps
+              mountPath: /dev/nvidia-caps
+            - name: nvidia-dev-uvm
+              mountPath: /dev/nvidia-uvm
+            - name: nvidia-dev-uvm-tools
+              mountPath: /dev/nvidia-uvm-tools
+          resources:
+            limits:
+              cpu: "4"
+              memory: "16Gi"
+            requests:
+              cpu: "4"
+              memory: "16Gi"
+      volumes:
+        - name: nvidia-dev
+          hostPath:
+            path: /dev/nvidia0
+        - name: nvidia-dev-ctl
+          hostPath:
+            path: /dev/nvidiactl
+        - name: nvidia-dev-caps
+          hostPath:
+            path: /dev/nvidia-caps
+        - name: nvidia-dev-uvm
+          hostPath:
+            path: /dev/nvidia-uvm
+        - name: nvidia-dev-uvm-tools
+          hostPath:
+            path: /dev/nvidia-uvm-tools
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: $appname
+  name: $appname
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  - name: grpc
+    port: 8001
+    targetPort: 8001
+  - name: metrics
+    port: 8002
+    targetPort: 8002
+  selector:
+    app: $appname
+  type: LoadBalancer

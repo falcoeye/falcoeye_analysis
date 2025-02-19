@@ -18,6 +18,9 @@ SERVING_TEMPLATE = {
     "job":os.path.join(
         os.path.dirname(__file__), "resources/analysis-job-template.yml"
     ), 
+    "triton":os.path.join(
+        os.path.dirname(__file__), "resources/triton-serving-template.yml"
+    ),
 }
 
 
@@ -172,14 +175,24 @@ class FalcoServingKube:
             return True
         return False
 
-    def get_service_address(self, external=False, hostname=False):
+    def get_service_address(self, external=False, hostname=False,port_name=None):
         if not self.is_running():
             logger.error(f"No running deployment found for {self.name}.")
             return None
 
         v1 = client.CoreV1Api()
         service = v1.read_namespaced_service(namespace=self.namespace, name=self.name)
-        [port] = [port.port for port in service.spec.ports]
+        # If port_name is specified, find that specific port
+        if port_name:
+            
+            port = next((port.port for port in service.spec.ports if getattr(port, 'name', None) == port_name), None)
+            if port is None:
+                logger.error(f"No port found with name {port_name}")
+                return None
+        else:
+            # If no port_name specified, use the first portl
+            logging.info(f"Service ports: {service.spec.ports} {self.name}")
+            port = service.spec.ports[0].port
         
         if external:
             try:
@@ -203,6 +216,7 @@ class FalcoServingKube:
             api_response = v1.list_namespaced_pod(namespace=self.namespace)
             for item in api_response.items:
                 item_podname = item.metadata.name
+                
                 if self.name in item_podname:
                     _pod_name = item_podname
                     break
